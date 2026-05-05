@@ -1,6 +1,3 @@
-cd /Users/pompee/Documents/GitHub/pmstatusreportmanagement
-
-cat > app.py << 'EOF'
 import json
 from datetime import date
 
