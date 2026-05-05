@@ -186,4 +186,3 @@ with st.expander("TPM Controls (show only when needed)"):
             st.success("Report regenerated. Use Quick Navigation tiles to jump/filter sections.")
         except json.JSONDecodeError as exc:
             st.error(f"Invalid JSON: {exc}")
-EOF
