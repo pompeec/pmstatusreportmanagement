@@ -1,54 +1,152 @@
 import json
-from datetime import date
+from datetime import date, datetime
 
 import streamlit as st
 
 st.set_page_config(page_title="TPM Executive Status", layout="wide")
 
+# -----------------------------
+# Theme / Styling
+# -----------------------------
+if "light_mode" not in st.session_state:
+    st.session_state["light_mode"] = False
+if "section_focus" not in st.session_state:
+    st.session_state["section_focus"] = "all"
+
+bg = "#ffffff" if st.session_state["light_mode"] else "#0b1020"
+panel = "#f8fafc" if st.session_state["light_mode"] else "#111827"
+border = "#e5e7eb" if st.session_state["light_mode"] else "#374151"
+text_muted = "#475569" if st.session_state["light_mode"] else "#9ca3af"
+
 st.markdown(
-    """
+    f"""
 <style>
-.status-card {padding: 14px 16px; border-radius: 10px; background: #111827; border: 1px solid #374151; margin-bottom: 12px;}
-.badge {display:inline-block; padding:2px 10px; border-radius:999px; font-weight:700; font-size:12px; margin-right:8px;}
-.badge-green {background:#064e3b; color:#a7f3d0;}
-.badge-yellow {background:#78350f; color:#fde68a;}
-.badge-red {background:#7f1d1d; color:#fecaca;}
-.small-muted {color:#9ca3af; font-size:12px;}
-.tile-note {font-size:12px; color:#9ca3af; margin-top:2px;}
+.main .block-container {{
+    max-width: 1200px;
+}}
+.status-card {{
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: {panel};
+    border: 1px solid {border};
+    margin-bottom: 12px;
+}}
+.badge {{
+    display:inline-block;
+    padding:2px 10px;
+    border-radius:999px;
+    font-weight:700;
+    font-size:12px;
+    margin-right:8px;
+}}
+.badge-green {{background:#064e3b; color:#a7f3d0;}}
+.badge-yellow {{background:#78350f; color:#fde68a;}}
+.badge-red {{background:#7f1d1d; color:#fecaca;}}
+.small-muted {{color:{text_muted}; font-size:12px;}}
+.tile-note {{font-size:12px; color:{text_muted}; margin-top:2px;}}
+.section-card {{
+    border: 1px solid {border};
+    border-radius: 10px;
+    padding: 16px;
+    margin-top: 10px;
+    background: {panel};
+}}
+.table-pill {{
+    font-weight:700;
+    padding:2px 8px;
+    border-radius:999px;
+}}
 </style>
 """,
     unsafe_allow_html=True,
 )
 
-st.title("Program Portfolio — Executive Status Brief")
-st.caption("Objective: Provide a concise, decision-ready summary of portfolio health, risks, and actions.")
-
+# -----------------------------
+# Data Model
+# -----------------------------
 DEFAULT_SIGNALS = {
-    "week_of": str(date.today()),
+    "program_name": "Enterprise Data Platform Modernization",
+    "org": "Data & AI Platform",
+    "quarter": "Q2 FY2026",
+    "sprint_label": "Sprint 24 | Week of May 5, 2026",
+    "prepared_by": "Pompee Chakraborty, TPM",
+    "report_version": "v1.3",
+    "reporting_date": str(date.today()),
     "big_rock_status": "Green",
     "initiative_status": "Yellow",
-    "jira": {"sprint_completion_pct": 78, "target_completion_pct": 85},
-    "defects": {"open_total": 23, "sev1": 5},
-    "okrs": [
-        {"name": "Adoption target", "status": "At risk", "note": "Flagship use case launch remains dependent on platform readiness milestones."},
-        {"name": "Use cases delivered", "status": "2/8", "note": "Two use cases are live; broader pipeline is in staged rollout."},
-    ],
+    "jira": {
+        "sprint_completion_pct": 78,
+        "target_completion_pct": 85,
+        "sprint_delta_vs_last_week": -4,
+    },
+    "defects": {
+        "sev1_current": 5,
+        "sev1_last_week": 3,
+        "open_total": 23,
+    },
+    "use_cases": {
+        "live_current": 2,
+        "live_target_q_end": 8,
+    },
     "workstreams": [
-        {"name": "Zero Copy Connectors", "status": "Green", "update": "Connector build complete; auth federation integrated.", "next": "Delta/Iceberg UX complete by Oct 10."},
-        {"name": "Trino Runtime", "status": "Green", "update": "Operational in core region; expansion pending compliance signoff.", "next": "Secondary region target Oct 1."},
-        {"name": "Data Product Experience", "status": "Yellow", "update": "Scope and sequencing decisions still open.", "next": "Scope baseline signoff in next steering review."},
+        {
+            "name": "Zero Copy Connectors",
+            "status": "Green",
+            "update": "Connector build complete; OAuth federation integrated.",
+            "next": "Delta/Iceberg UX complete by May 10, 2026.",
+        },
+        {
+            "name": "Trino Runtime",
+            "status": "Green",
+            "update": "Operational in core region; expansion pending compliance signoff.",
+            "next": "Secondary region target May 12, 2026.",
+        },
+        {
+            "name": "Data Product Experience",
+            "status": "Yellow",
+            "update": "Scope and sequencing decisions still open.",
+            "next": "Scope baseline signoff at steering review on May 12, 2026.",
+        },
     ],
     "risks": [
-        {"id": "RSK-101", "description": "Scope/timeline misalignment may impact downstream milestones", "impact": "High", "mitigation": "Finalize scope baseline and dependency sequencing", "owner": "Program PM", "due": "Next review", "status": "WIP"},
-        {"id": "RSK-088", "description": "Platform modernization scope-resource tradeoff risk", "impact": "High", "mitigation": "Escalate priority decisions and rebalance capacity", "owner": "Engineering Director", "due": "Mitigated", "status": "Mitigated"},
+        {
+            "id": "RSK-101",
+            "description": "Scope/timeline misalignment may impact downstream milestones.",
+            "impact": "High",
+            "mitigation": "Finalize scope baseline, dependency sequencing, and design signoff.",
+            "owner": "Program PM",
+            "due": "May 12, 2026",
+            "status": "WIP",
+        },
+        {
+            "id": "RSK-088",
+            "description": "Platform modernization scope-resource tradeoff risk.",
+            "impact": "High",
+            "mitigation": "Escalate priority decisions and rebalance capacity.",
+            "owner": "Engineering Director",
+            "due": "May 9, 2026",
+            "status": "Mitigated",
+        },
     ],
     "decisions_needed": [
-        "Approve temporary capacity shift to defect reduction for one sprint.",
-        "Approve contingency sequencing plan for external dependency variance.",
+        {
+            "decision": "Approve temporary capacity shift to Sev-1/Sev-2 defect reduction for one sprint.",
+            "owner": "Engineering Director",
+            "due": "May 9, 2026",
+            "implication": "Prevents quality spillover into Sprint 25 and protects release confidence.",
+        },
+        {
+            "decision": "Approve contingency sequencing plan for external dependency variance.",
+            "owner": "Portfolio Steering Committee",
+            "due": "May 12, 2026",
+            "implication": "Maintains milestone confidence if dependency slips by >5 business days.",
+        },
     ],
 }
 
-
+# -----------------------------
+# Helpers
+# -----------------------------
 def status_badge(label: str, status: str) -> str:
     lower = status.lower()
     if "green" in lower or "mitigated" in lower:
@@ -60,27 +158,101 @@ def status_badge(label: str, status: str) -> str:
     return f'<span class="badge {cls}">{label}: {status}</span>'
 
 
+def status_pill(status: str) -> str:
+    lower = status.lower()
+    if "green" in lower:
+        return f"<span class='table-pill' style='background:#064e3b;color:#a7f3d0'>{status}</span>"
+    if "yellow" in lower:
+        return f"<span class='table-pill' style='background:#78350f;color:#fde68a'>{status}</span>"
+    return f"<span class='table-pill' style='background:#7f1d1d;color:#fecaca'>{status}</span>"
+
+
 def health_summary(signals: dict) -> tuple[str, str]:
-    sev1 = signals.get("defects", {}).get("sev1", 0)
-    sprint = signals.get("jira", {}).get("sprint_completion_pct", 0)
-    target = signals.get("jira", {}).get("target_completion_pct", 0)
-    if sev1 >= 5 or sprint < target - 7:
-        return "Yellow", "Program is at risk but trending up with mitigation actions underway."
-    return "Green", "Execution is on track with manageable operational risk."
+    sev1 = signals["defects"]["sev1_current"]
+    sprint = signals["jira"]["sprint_completion_pct"]
+    target = signals["jira"]["target_completion_pct"]
+    yellow_streams = sum(1 for w in signals["workstreams"] if w["status"].lower() == "yellow")
+
+    if sev1 >= 5 or sprint < target - 5:
+        health = "Yellow"
+    else:
+        health = "Green"
+
+    narrative = (
+        f"{len(signals['workstreams']) - yellow_streams} of {len(signals['workstreams'])} workstreams are on track; "
+        "Data Product Experience scope risk is being resolved in the next steering review, "
+        "with decision required by May 12, 2026."
+    )
+    return health, narrative
+
+
+def insights_block(signals: dict) -> str:
+    sprint = signals["jira"]["sprint_completion_pct"]
+    target = signals["jira"]["target_completion_pct"]
+    sprint_delta = signals["jira"]["sprint_delta_vs_last_week"]
+    sev1_now = signals["defects"]["sev1_current"]
+    sev1_prev = signals["defects"]["sev1_last_week"]
+    sev1_delta = sev1_now - sev1_prev
+
+    sprint_implication = (
+        "At current burn, milestone confidence is reduced; scope tiering needed to recover by Sprint 25."
+        if sprint < target
+        else "Delivery is aligned with target trajectory."
+    )
+    sev1_implication = (
+        "Quality pressure is increasing; defect swarming required to avoid carryover risk."
+        if sev1_delta > 0
+        else "Quality trend is stabilizing."
+    )
+
+    sprint_delta_txt = f"{sprint_delta:+d} pts vs last week"
+    sev1_delta_txt = f"{sev1_delta:+d} vs last week"
+
+    return f"""
+- **Sprint completion:** {sprint}% vs target {target}% (**{sprint_delta_txt}**)  
+  *So what:* {sprint_implication}
+- **Sev-1 defects:** {sev1_now} (**{sev1_delta_txt}**)  
+  *So what:* {sev1_implication}
+- **Execution signal:** Architecture and dependency governance reviews completed; gated execution is continuing.
+"""
 
 
 def render_workstream_table(workstreams: list[dict]) -> str:
-    rows = "\n".join(
-        [f"| {w['name']} | {w['status']} | {w['update']} | {w['next']} |" for w in workstreams]
+    rows = []
+    for w in workstreams:
+        rows.append(
+            f"| {w['name']} | {status_pill(w['status'])} | {w['update']} | {w['next']} |"
+        )
+    return (
+        "| Workstream | Status | Current update | Next milestone |\n"
+        "|---|---|---|---|\n"
+        + "\n".join(rows)
     )
-    return "| Workstream | Status | Current update | Next milestone |\n|---|---|---|---|\n" + rows
 
 
 def render_risk_table(risks: list[dict]) -> str:
-    rows = "\n".join(
-        [f"| {r['id']} | {r['impact']} | {r['description']} | {r['mitigation']} | {r['status']} | {r['owner']} | {r['due']} |" for r in risks]
+    rows = []
+    for r in risks:
+        rows.append(
+            f"| {r['id']} | {r['impact']} | {r['description']} | {r['mitigation']} | {r['status']} | {r['owner']} | {r['due']} |"
+        )
+    return (
+        "| Risk ID | Impact | Description | Mitigation | Status | Owner | Due |\n"
+        "|---|---|---|---|---|---|---|\n"
+        + "\n".join(rows)
     )
-    return "| Risk ID | Impact | Description | Mitigation | Status | Owner | Due |\n|---|---|---|---|---|---|---|\n" + rows
+
+
+def render_decisions(decisions: list[dict]) -> str:
+    lines = []
+    for d in decisions:
+        lines.append(
+            f"- **Decision:** {d['decision']}\n"
+            f"  - Owner: {d['owner']}\n"
+            f"  - Due: {d['due']}\n"
+            f"  - Implication: {d['implication']}"
+        )
+    return "\n".join(lines)
 
 
 def metric_tile(col, label: str, value: str, key: str, note: str):
@@ -89,100 +261,117 @@ def metric_tile(col, label: str, value: str, key: str, note: str):
     col.markdown(f"<div class='tile-note'>{note}</div>", unsafe_allow_html=True)
 
 
-def generate_exec_report(signals: dict):
+def build_report(signals: dict):
     health, narrative = health_summary(signals)
-    big_rock = signals.get("big_rock_status", "Green")
-    init_status = signals.get("initiative_status", "Yellow")
-    sprint = signals.get("jira", {}).get("sprint_completion_pct", 0)
-    target = signals.get("jira", {}).get("target_completion_pct", 0)
-    sev1 = signals.get("defects", {}).get("sev1", 0)
-
-    okr_lines = "\n".join([f"- **{o['name']}**: {o['status']} — {o['note']}" for o in signals.get("okrs", [])])
-    decision_lines = "\n".join([f"- {d}" for d in signals.get("decisions_needed", [])])
-
-    report = f"""<a id='highlights'></a>
-## Key Highlights
-- Sprint completion: **{sprint}%** (target: **{target}%**)
-- Sev-1 defects: **{sev1}**
-- Dependency governance reviews completed; execution proceeding with stage gates.
-
-<a id='timeline'></a>
-## Program Timeline & Status
-{render_workstream_table(signals.get('workstreams', []))}
-
-<a id='risks'></a>
-## Top Issues and Risks
-{render_risk_table(signals.get('risks', []))}
-
-<a id='decisions'></a>
-## Decisions Required from Leadership
-{decision_lines}
-
-<a id='metrics'></a>
-## Success Metrics
-{okr_lines}
-"""
-    return report, health, narrative, big_rock, init_status
+    report = {
+        "summary": narrative,
+        "health": health,
+        "highlights": insights_block(signals),
+        "timeline": render_workstream_table(signals["workstreams"]),
+        "risks": render_risk_table(signals["risks"]),
+        "decisions": render_decisions(signals["decisions_needed"]),
+    }
+    return report
 
 
-if "section_focus" not in st.session_state:
-    st.session_state["section_focus"] = "all"
+# -----------------------------
+# Header / Context
+# -----------------------------
+top_left, top_right = st.columns([3, 1])
+with top_left:
+    st.title("Program Portfolio — Executive Status Brief")
+    st.caption(
+        f"Program: **{DEFAULT_SIGNALS['program_name']}** | Org: **{DEFAULT_SIGNALS['org']}** | "
+        f"{DEFAULT_SIGNALS['quarter']} | {DEFAULT_SIGNALS['sprint_label']}"
+    )
+with top_right:
+    if st.toggle("Light export view", value=st.session_state["light_mode"]):
+        st.session_state["light_mode"] = True
+    else:
+        st.session_state["light_mode"] = False
 
-report, health, narrative, big_rock, init_status = generate_exec_report(DEFAULT_SIGNALS)
+report = build_report(DEFAULT_SIGNALS)
+health = report["health"]
 
 summary_html = (
     "<div class='status-card'><strong>Executive Summary</strong><br><br>"
-    + status_badge("Strategic Use Cases", big_rock)
-    + status_badge("Platform Initiatives", init_status)
+    + status_badge("Strategic Use Cases", DEFAULT_SIGNALS["big_rock_status"])
+    + status_badge("Platform Initiatives", DEFAULT_SIGNALS["initiative_status"])
     + status_badge("Overall Health", health)
-    + f"<div style='margin-top:10px'>{narrative}</div>"
-    + f"<div class='small-muted'>Reporting period ending {DEFAULT_SIGNALS['week_of']}</div></div>"
+    + f"<div style='margin-top:10px'>{report['summary']}</div>"
+    + f"<div class='small-muted'>Prepared by: {DEFAULT_SIGNALS['prepared_by']} | "
+      f"Report date: {DEFAULT_SIGNALS['reporting_date']} | Version: {DEFAULT_SIGNALS['report_version']}</div></div>"
 )
 st.markdown(summary_html, unsafe_allow_html=True)
 
-# Tiles + section filters
+# -----------------------------
+# Progress Metric Visualization
+# -----------------------------
+live = DEFAULT_SIGNALS["use_cases"]["live_current"]
+target_live = DEFAULT_SIGNALS["use_cases"]["live_target_q_end"]
+progress_pct = int((live / target_live) * 100) if target_live else 0
+
+st.markdown("### Success Trajectory")
+st.progress(progress_pct, text=f"Use cases live: {live}/{target_live} ({progress_pct}%) toward quarter target")
+
+# -----------------------------
+# Quick Navigation / Filtering
+# -----------------------------
 st.markdown("### Quick Navigation")
 c1, c2, c3, c4, c5 = st.columns(5)
-metric_tile(c1, "Highlights", "01", "highlights", "Click to focus")
-metric_tile(c2, "Timeline", "02", "timeline", "Click to focus")
-metric_tile(c3, "Risks", "03", "risks", "Click to focus")
-metric_tile(c4, "Decisions", "04", "decisions", "Click to focus")
-metric_tile(c5, "Metrics", "05", "metrics", "Click to focus")
+metric_tile(c1, "Highlights", "01", "highlights", "Click to focus section")
+metric_tile(c2, "Timeline", "02", "timeline", "Click to focus section")
+metric_tile(c3, "Risks", "03", "risks", "Click to focus section")
+metric_tile(c4, "Decisions", "04", "decisions", "Click to focus section")
+metric_tile(c5, "Metrics", "05", "metrics", "Click to focus section")
 
 if st.button("Show full report", use_container_width=True):
     st.session_state["section_focus"] = "all"
 
 focus = st.session_state["section_focus"]
-
 if focus != "all":
-    st.info(f"Filtered view: {focus.title()} section")
+    st.info(f"Focused view: {focus.title()}")
 
-with st.container(border=True):
-    if focus == "all":
-        st.markdown(report, unsafe_allow_html=True)
-    else:
-        if focus == "highlights":
-            st.markdown(report.split("<a id='timeline'></a>")[0], unsafe_allow_html=True)
-        elif focus == "timeline":
-            section = report.split("<a id='timeline'></a>")[1].split("<a id='risks'></a>")[0]
-            st.markdown("## Program Timeline & Status\n" + section.split("## Program Timeline & Status")[-1], unsafe_allow_html=True)
-        elif focus == "risks":
-            section = report.split("<a id='risks'></a>")[1].split("<a id='decisions'></a>")[0]
-            st.markdown("## Top Issues and Risks\n" + section.split("## Top Issues and Risks")[-1], unsafe_allow_html=True)
-        elif focus == "decisions":
-            section = report.split("<a id='decisions'></a>")[1].split("<a id='metrics'></a>")[0]
-            st.markdown("## Decisions Required from Leadership\n" + section.split("## Decisions Required from Leadership")[-1], unsafe_allow_html=True)
-        elif focus == "metrics":
-            section = report.split("<a id='metrics'></a>")[1]
-            st.markdown("## Success Metrics\n" + section.split("## Success Metrics")[-1], unsafe_allow_html=True)
+# -----------------------------
+# Section Rendering
+# -----------------------------
+def section(title: str, content: str):
+    st.markdown(f"<div class='section-card'><h2>{title}</h2>{content}</div>", unsafe_allow_html=True)
 
-with st.expander("TPM Controls (show only when needed)"):
-    st.caption("Input signals are hidden in leadership view. Use this section for editing/testing.")
-    raw = st.text_area("Input Signals JSON", value=json.dumps(DEFAULT_SIGNALS, indent=2), height=280)
-    if st.button("Regenerate report from edited signals"):
+if focus in ("all", "highlights"):
+    section("Key Highlights", st.markdown(report["highlights"]) or "")
+    st.markdown(report["highlights"])
+
+if focus in ("all", "timeline"):
+    st.markdown("## Program Timeline & Status")
+    st.markdown(report["timeline"], unsafe_allow_html=True)
+
+if focus in ("all", "risks"):
+    st.markdown("## Top Issues and Risks")
+    st.markdown(report["risks"], unsafe_allow_html=True)
+
+if focus in ("all", "decisions"):
+    st.markdown("## Decisions Required from Leadership")
+    st.markdown(report["decisions"])
+
+if focus in ("all", "metrics"):
+    st.markdown("## Success Metrics")
+    st.markdown(
+        f"- **Quarter objective:** {target_live} live use cases\n"
+        f"- **Current status:** {live} live ({progress_pct}%)\n"
+        f"- **Trajectory:** {'On track' if progress_pct >= 50 else 'Needs acceleration'}"
+    )
+
+# -----------------------------
+# Internal / TPM-only controls
+# -----------------------------
+with st.expander("Internal editor (for TPM use)"):
+    st.caption("Optional: edit raw input signals for scenario testing.")
+    raw = st.text_area("Input Signals JSON", value=json.dumps(DEFAULT_SIGNALS, indent=2), height=260)
+    if st.button("Regenerate from edited signals"):
         try:
             parsed = json.loads(raw)
-            report, health, narrative, big_rock, init_status = generate_exec_report(parsed)
-            st.success("Report regenerated. Use Quick Navigation tiles to jump/filter sections.")
+            report = build_report(parsed)
+            st.success("Report regenerated in current session. Re-run section focus as needed.")
         except json.JSONDecodeError as exc:
             st.error(f"Invalid JSON: {exc}")
